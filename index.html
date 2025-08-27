@@ -1,1 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아라미디어 AI 오디오 플레이어</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 960px;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .play-button {
+            transition: all 0.3s ease;
+        }
+        .play-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .play-button:active {
+            transform: translateY(0);
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
 
+    <div class="container mx-auto p-6 md:p-12 card text-center">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">아라미디어 오디오 플레이어</h1>
+        <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
+            아래 버튼을 눌러 아라미디어 사회적협동조합에 대한 AI 오디오 오버뷰를 들어보세요.
+        </p>
+        <button id="playButton" class="play-button bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transform transition-transform duration-300">
+            <span id="buttonText">플레이</span>
+            <div id="loadingSpinner" class="hidden loading-spinner"></div>
+        </button>
+
+        <div id="statusMessage" class="mt-6 text-sm text-gray-500 hidden"></div>
+        <audio id="audioPlayer" class="hidden"></audio>
+    </div>
+
+    <script>
+        // 아라미디어 오버뷰 텍스트를 담은 변수
+        const audioText = `
+            안녕하세요. 아라미디어 사회적협동조합에 대한 오버뷰를 시작합니다.
+
+            아라미디어는 전문적인 미디어 역량을 기반으로 지역 소상공인과 함께 성장하는 미디어 전문가 그룹입니다. 안정적인 일자리 제공과 지역의 문화 활성화에 기여하며, 궁극적으로 지역과 국가 발전을 목적으로 설립되었습니다.
+
+            아라미디어는 '아이디어부터 실전까지'라는 슬로건 아래, 소상공인의 실질적인 성장을 돕는 다양한 사업을 추진하고 있습니다.
+
+            핵심 사업으로는 소상공인 마케팅 브랜딩, 미디어 활용 교육, 그리고 지역 문화 및 관광 홍보가 있습니다.
+
+            아라미디어는 짧은 기간 동안 꾸준히 성장해왔습니다. 2024년 5월, '온라인 마케팅 사무원 과정' 수료를 통해 첫 발을 내디뎠고, 이후 광명시 소상공인 SNS 체험단과 협업하며 실전 경험을 쌓았습니다.
+
+            2024년 9월에는 SNS 마케팅 지도사 자격증을 취득하며 전문성을 강화했습니다. 2024년 12월 창립총회를 통해 공식 출범하며, 지역 사회에 긍정적인 영향을 미치는 기업으로 자리매김하고 있습니다.
+
+            아라미디어는 소상공인 매출 증대와 지역 경제 활성화를 통해 소비와 생산의 선순환 구조를 만드는 것을 목표로 합니다.
+            지역 내 일자리 창출 및 지역사회 발전에 기여하는 경제적 효과를 기대하고 있습니다.
+
+            아라미디어 사회적협동조합에 대한 오버뷰를 마칩니다. 감사합니다.
+        `;
+
+        const playButton = document.getElementById('playButton');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const buttonText = document.getElementById('buttonText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // 상태를 관리하는 변수
+        let isPlaying = false;
+        let isProcessing = false;
+
+        // Base64 문자열을 ArrayBuffer로 변환하는 함수
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // PCM 데이터를 WAV 파일 형식으로 변환하는 함수
+        // gemini-2.5-flash-preview-tts 모델이 반환하는 오디오 데이터는 16bit signed PCM입니다.
+        function pcmToWav(pcm16, sampleRate) {
+            const pcmLength = pcm16.length * 2;
+            const wavBuffer = new ArrayBuffer(44 + pcmLength);
+            const view = new DataView(wavBuffer);
+            const littleEndian = true;
+
+            // RIFF chunk
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + pcmLength, littleEndian);
+            writeString(view, 8, 'WAVE');
+
+            // fmt chunk
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, littleEndian); // Sub-chunk size
+            view.setUint16(20, 1, littleEndian);  // Audio format (1 = PCM)
+            view.setUint16(22, 1, littleEndian);  // Channels (1)
+            view.setUint32(24, sampleRate, littleEndian); // Sample rate
+            view.setUint32(28, sampleRate * 2, littleEndian); // Byte rate
+            view.setUint16(32, 2, littleEndian);  // Block align
+            view.setUint16(34, 16, littleEndian); // Bits per sample
+
+            // data chunk
+            writeString(view, 36, 'data');
+            view.setUint32(40, pcmLength, littleEndian);
+            
+            // PCM data
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(44 + i * 2, pcm16[i], littleEndian);
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+
+            function writeString(view, offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+        }
+
+        // 재생 상태 업데이트
+        function updatePlaybackState(state) {
+            if (state === 'playing') {
+                isPlaying = true;
+                buttonText.textContent = '일시정지';
+                playButton.classList.add('bg-red-600', 'hover:bg-red-700');
+                playButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            } else if (state === 'paused' || state === 'stopped') {
+                isPlaying = false;
+                buttonText.textContent = '플레이';
+                playButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+                playButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                if (state === 'stopped') {
+                    statusMessage.classList.add('hidden');
+                }
+            }
+        }
+
+        // API 호출 함수
+        async function fetchAudio() {
+            if (isProcessing) return; // 이미 처리 중이면 아무것도 하지 않음
+
+            isProcessing = true;
+            statusMessage.textContent = '오디오를 생성 중입니다. 잠시만 기다려 주세요...';
+            statusMessage.classList.remove('hidden', 'text-green-500', 'text-red-500');
+            statusMessage.classList.add('text-gray-500');
+            buttonText.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+            playButton.disabled = true;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{
+                    parts: [{ text: audioText }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: "Kore" } // 'Kore'는 firm voice입니다. 다른 목소리 옵션도 사용 가능합니다.
+                        }
+                    }
+                },
+                model: "gemini-2.5-flash-preview-tts"
+            };
+
+            // exponential backoff
+            const maxRetries = 5;
+            let currentRetry = 0;
+            
+            while (currentRetry < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) {
+                        if (response.status === 429) { // Too many requests
+                            const backoffTime = Math.pow(2, currentRetry) * 1000;
+                            console.warn(`API rate limit exceeded. Retrying in ${backoffTime / 1000} seconds...`);
+                            await new Promise(resolve => setTimeout(resolve, backoffTime));
+                            currentRetry++;
+                            continue; // Retry the loop
+                        } else {
+                            throw new Error(`API error: ${response.status} ${response.statusText}`);
+                        }
+                    }
+
+                    const result = await response.json();
+                    const part = result?.candidates?.[0]?.content?.parts?.[0];
+                    const audioData = part?.inlineData?.data;
+                    const mimeType = part?.inlineData?.mimeType;
+
+                    if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                        const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)[1], 10);
+                        const pcmData = base64ToArrayBuffer(audioData);
+                        const pcm16 = new Int16Array(pcmData);
+                        const wavBlob = pcmToWav(pcm16, sampleRate);
+                        const audioUrl = URL.createObjectURL(wavBlob);
+                        
+                        audioPlayer.src = audioUrl;
+                        audioPlayer.play();
+                        statusMessage.textContent = '오디오 재생 중...';
+                        statusMessage.classList.remove('text-gray-500', 'text-red-500');
+                        statusMessage.classList.add('text-green-500');
+                        updatePlaybackState('playing');
+                    } else {
+                        throw new Error('오디오 데이터를 찾을 수 없습니다.');
+                    }
+                    
+                    break; // Exit the loop on success
+
+                } catch (error) {
+                    console.error('오디오 생성 중 오류 발생:', error);
+                    statusMessage.textContent = `오류가 발생했습니다: ${error.message}`;
+                    statusMessage.classList.remove('text-gray-500', 'text-green-500');
+                    statusMessage.classList.add('text-red-500');
+                    break; // Exit the loop on fatal error
+                } finally {
+                    isProcessing = false;
+                    buttonText.classList.remove('hidden');
+                    loadingSpinner.classList.add('hidden');
+                    playButton.disabled = false;
+                }
+            }
+
+            if (currentRetry >= maxRetries) {
+                statusMessage.textContent = '오디오 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+                statusMessage.classList.remove('text-gray-500', 'text-green-500');
+                statusMessage.classList.add('text-red-500');
+            }
+        }
+        
+        // 버튼 클릭 이벤트 리스너
+        playButton.addEventListener('click', () => {
+            if (isPlaying) {
+                audioPlayer.pause();
+                updatePlaybackState('paused');
+            } else {
+                if (audioPlayer.src) {
+                    audioPlayer.play();
+                    updatePlaybackState('playing');
+                } else {
+                    fetchAudio();
+                }
+            }
+        });
+
+        // 오디오 재생이 끝나면 상태를 초기화
+        audioPlayer.addEventListener('ended', () => {
+            updatePlaybackState('stopped');
+        });
+
+        // 페이지 로드 시 오디오 상태 초기화
+        document.addEventListener('DOMContentLoaded', () => {
+            updatePlaybackState('stopped');
+        });
+
+    </script>
+</body>
+</html>
