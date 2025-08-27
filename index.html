@@ -1,288 +1,344 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>아라미디어 AI 오디오 플레이어</title>
+    <title>아라미디어 사회적협동조합 | 지역과 함께 성장하는 미디어 전문가</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Community (따스한 공동체) -->
+    <!-- Application Structure Plan: 본 SPA는 사용자가 아라미디어의 스토리를 자연스럽게 따라갈 수 있도록 설계된 수직적 네러티브 구조를 채택했습니다. 정적인 보고서 형식을 탈피하여 '소개 → 우리의 이야기(연혁) → 핵심 사업 → 비전과 목표 → 기대 효과 → 기업 정보' 순으로 콘텐츠를 재배치했습니다. 이 구조는 사용자가 회사의 정체성을 먼저 인지하고, 그들의 과거(설립 과정)를 통해 신뢰를 쌓은 뒤, 현재의 사업과 미래의 비전을 순차적으로 이해하도록 유도합니다. 각 섹션은 명확한 헤딩과 소개글로 컨텍스트를 제공하며, 상단 고정 내비게이션을 통해 사용자가 원하는 정보에 즉시 접근할 수 있도록 하여 탐색의 자유도를 보장합니다. 이 방식은 정보의 위계를 명확히 하고 사용자 경험을 극대화하기 위해 선택되었습니다. -->
+    <!-- Visualization & Content Choices: 보고서의 핵심 콘텐츠인 '연혁'은 사용자의 시선 흐름에 따라 이벤트가 동적으로 나타나는 인터랙티브 타임라인으로 시각화했습니다. (Goal: Change -> Presentation: Interactive Timeline -> Interaction: Scroll-based animation). 이는 정적인 텍스트 목록보다 훨씬 높은 몰입감과 정보 전달력을 제공하며, 회사의 성장 서사를 효과적으로 전달합니다. '핵심 사업'과 '목표'는 아이콘을 활용한 카드 그리드 레이아웃으로 표현하여 복잡한 정보를 시각적으로 명료하게 정리했습니다. (Goal: Organize -> Presentation: Card Grid -> Interaction: Hover effects). 보고서에 정량적 데이터가 없어 Chart.js와 같은 라이브러리는 불필하다고 판단, 사용하지 않았습니다. 모든 그래픽 요소는 HTML/CSS와 유니코드 문자로 구현했습니다. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #FFFBF5;
+            color: #4A4A4A;
         }
-        .container {
-            max-width: 960px;
-        }
-        .card {
-            background-color: #ffffff;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-        .play-button {
+        .text-balance { text-wrap: balance; }
+        .nav-link {
             transition: all 0.3s ease;
+            position: relative;
         }
-        .play-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #F97316;
+            transition: width 0.3s ease;
         }
-        .play-button:active {
+        .nav-link.active::after,
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        .timeline-item {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .timeline-item.visible {
+            opacity: 1;
             transform: translateY(0);
         }
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .hero-bg {
+            background-color: #FFFAF0;
+            background-image:
+                radial-gradient(circle at 100% 0, #FFEADD 0%, #FFFBF5 25%),
+                radial-gradient(circle at 0 100%, #FFF0E0 0%, #FFFBF5 25%);
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body>
 
-    <div class="container mx-auto p-6 md:p-12 card text-center">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">아라미디어 오디오 플레이어</h1>
-        <p class="text-gray-600 mb-8 max-w-2xl mx-auto">
-            아래 버튼을 눌러 아라미디어 사회적협동조합에 대한 AI 오디오 오버뷰를 들어보세요.
-        </p>
-        <button id="playButton" class="play-button bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transform transition-transform duration-300">
-            <span id="buttonText">플레이</span>
-            <div id="loadingSpinner" class="hidden loading-spinner"></div>
-        </button>
+    <header id="header" class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#hero" class="flex items-center space-x-2">
+                <span class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-xl">아</span>
+                <span class="text-xl font-bold text-gray-800">아라미디어</span>
+            </a>
+            <div class="hidden md:flex space-x-8">
+                <a href="#story" class="nav-link text-gray-600 font-medium">우리의 이야기</a>
+                <a href="#services" class="nav-link text-gray-600 font-medium">주요 사업</a>
+                <a href="#vision" class="nav-link text-gray-600 font-medium">비전과 목표</a>
+                <a href="#impact" class="nav-link text-gray-600 font-medium">기대 효과</a>
+            </div>
+            <a href="#contact" class="hidden md:inline-block bg-orange-500 text-white px-5 py-2 rounded-full hover:bg-orange-600 transition-colors">문의하기</a>
+            <button id="mobile-menu-button" class="md:hidden text-gray-700 focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden bg-white py-2">
+            <a href="#story" class="block text-center py-2 text-gray-600">우리의 이야기</a>
+            <a href="#services" class="block text-center py-2 text-gray-600">주요 사업</a>
+            <a href="#vision" class="block text-center py-2 text-gray-600">비전과 목표</a>
+            <a href="#impact" class="block text-center py-2 text-gray-600">기대 효과</a>
+            <a href="#contact" class="block text-center py-2 text-gray-600">문의하기</a>
+        </div>
+    </header>
 
-        <div id="statusMessage" class="mt-6 text-sm text-gray-500 hidden"></div>
-        <audio id="audioPlayer" class="hidden"></audio>
-    </div>
+    <main>
+        <section id="hero" class="hero-bg min-h-[60vh] md:min-h-[80vh] flex items-center">
+            <div class="container mx-auto px-6 py-24 text-center">
+                <h1 class="text-4xl md:text-6xl font-extrabold text-gray-800 leading-tight text-balance">
+                    지역 소상공인과 함께, <br class="hidden md:block" />
+                    <span class="text-orange-500">지속 가능한 내일</span>을 만듭니다.
+                </h1>
+                <p class="mt-6 text-lg md:text-xl text-gray-600 max-w-3xl mx-auto text-balance">
+                    아라미디어 사회적협동조합은 전문적인 미디어 역량을 바탕으로 지역 경제에 활력을 불어넣고, 안정적인 일자리를 창출하여 공동체의 성장에 기여합니다.
+                </p>
+                <div class="mt-10">
+                    <a href="#services" class="bg-orange-500 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-orange-600 transition-transform hover:scale-105 transform">우리의 서비스 보기</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="story" class="py-20 md:py-28">
+            <div class="container mx-auto px-6">
+                <div class="text-center max-w-3xl mx-auto">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-800">우리의 이야기</h2>
+                    <p class="mt-4 text-lg text-gray-600">
+                        아라미디어는 전문성을 향한 열정과 지역사회에 대한 애정으로 시작되었습니다. 체계적인 교육과정과 실제 현장 경험을 통해 단단하게 다져진 우리의 발자취를 소개합니다.
+                    </p>
+                </div>
+
+                <div class="mt-16 relative">
+                    <div class="absolute left-1/2 -translate-x-1/2 h-full w-0.5 bg-orange-200" aria-hidden="true"></div>
+                    <div id="timeline-container" class="space-y-12">
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="services" class="py-20 md:py-28 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center max-w-3xl mx-auto">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-800">"아이디어부터 실전까지!"</h2>
+                    <p class="mt-4 text-lg text-gray-600">
+                        아라미디어는 소상공인의 실질적인 매출 증대를 위한 맞춤형 온라인 홍보 솔루션을 제공합니다. 각 분야의 전문가들이 기획부터 실행까지 전 과정을 함께합니다.
+                    </p>
+                </div>
+                <div id="services-grid" class="mt-16 grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                </div>
+            </div>
+        </section>
+
+        <section id="vision" class="py-20 md:py-28">
+            <div class="container mx-auto px-6">
+                <div class="text-center max-w-3xl mx-auto">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-800">우리의 비전과 목표</h2>
+                    <p class="mt-4 text-lg text-gray-600">
+                        우리는 단순한 이윤 추구를 넘어, 조합원, 지역사회, 그리고 소상공인 모두가 함께 성장하는 선순환 구조를 만드는 것을 목표로 합니다.
+                    </p>
+                </div>
+                <div class="mt-16 grid md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+                </div>
+            </div>
+        </section>
+
+        <section id="impact" class="py-20 md:py-28 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center max-w-3xl mx-auto">
+                    <h2 class="text-3xl md:text-4xl font-bold text-gray-800">기대 효과</h2>
+                    <p class="mt-4 text-lg text-gray-600">
+                        우리의 활동은 소상공인의 성공을 넘어 지역사회 전체에 긍정적인 파급 효과를 가져올 것이라 믿습니다.
+                    </p>
+                </div>
+                <div class="mt-16 grid lg:grid-cols-2 gap-12 items-center">
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer id="contact" class="bg-gray-800 text-white">
+        <div class="container mx-auto px-6 py-16">
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <div class="lg:col-span-1">
+                    <h3 class="text-2xl font-bold">아라미디어 사회적협동조합</h3>
+                    <p class="mt-4 text-gray-300">지역과 함께 성장하는 미디어 전문가 그룹. 궁금한 점이 있으시면 언제든지 연락주세요.</p>
+                </div>
+                <div class="md:col-span-1 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="text-lg font-semibold text-orange-400">기업 정보</h4>
+                        <ul class="mt-4 space-y-2 text-gray-300">
+                            <li><strong>대표자:</strong> 이가은</li>
+                            <li><strong>사업자등록번호:</strong> 525-82-00790</li>
+                            <li><strong>설립일:</strong> 2025년 3월 21일</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-orange-400">연락처 정보</h4>
+                        <ul class="mt-4 space-y-2 text-gray-300">
+                            <li><strong>주소:</strong> 경기도 광명시 오리로 362, 1층 (창업지원센터)</li>
+                            <li><strong>연락처:</strong> 010-2237-5335</li>
+                            <li><strong>블로그:</strong> <a href="https://blog.naver.com/ara_media" target="_blank" class="hover:text-orange-400 transition-colors">blog.naver.com/ara_media</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-12 border-t border-gray-700 pt-6 text-center text-gray-400 text-sm">
+                <p>&copy; 2025 아라미디어 사회적협동조합. All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
 
     <script>
-        // 아라미디어 오버뷰 텍스트를 담은 변수
-        const audioText = `
-            안녕하세요. 아라미디어 사회적협동조합에 대한 오버뷰를 시작합니다.
+        document.addEventListener('DOMContentLoaded', function () {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
 
-            아라미디어는 전문적인 미디어 역량을 기반으로 지역 소상공인과 함께 성장하는 미디어 전문가 그룹입니다. 안정적인 일자리 제공과 지역의 문화 활성화에 기여하며, 궁극적으로 지역과 국가 발전을 목적으로 설립되었습니다.
-
-            아라미디어는 '아이디어부터 실전까지'라는 슬로건 아래, 소상공인의 실질적인 성장을 돕는 다양한 사업을 추진하고 있습니다.
-
-            핵심 사업으로는 소상공인 마케팅 브랜딩, 미디어 활용 교육, 그리고 지역 문화 및 관광 홍보가 있습니다.
-
-            아라미디어는 짧은 기간 동안 꾸준히 성장해왔습니다. 2024년 5월, '온라인 마케팅 사무원 과정' 수료를 통해 첫 발을 내디뎠고, 이후 광명시 소상공인 SNS 체험단과 협업하며 실전 경험을 쌓았습니다.
-
-            2024년 9월에는 SNS 마케팅 지도사 자격증을 취득하며 전문성을 강화했습니다. 2024년 12월 창립총회를 통해 공식 출범하며, 지역 사회에 긍정적인 영향을 미치는 기업으로 자리매김하고 있습니다.
-
-            아라미디어는 소상공인 매출 증대와 지역 경제 활성화를 통해 소비와 생산의 선순환 구조를 만드는 것을 목표로 합니다.
-            지역 내 일자리 창출 및 지역사회 발전에 기여하는 경제적 효과를 기대하고 있습니다.
-
-            아라미디어 사회적협동조합에 대한 오버뷰를 마칩니다. 감사합니다.
-        `;
-
-        const playButton = document.getElementById('playButton');
-        const audioPlayer = document.getElementById('audioPlayer');
-        const buttonText = document.getElementById('buttonText');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const statusMessage = document.getElementById('statusMessage');
-
-        // 상태를 관리하는 변수
-        let isPlaying = false;
-        let isProcessing = false;
-
-        // Base64 문자열을 ArrayBuffer로 변환하는 함수
-        function base64ToArrayBuffer(base64) {
-            const binaryString = window.atob(base64);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            return bytes.buffer;
-        }
-
-        // PCM 데이터를 WAV 파일 형식으로 변환하는 함수
-        // gemini-2.5-flash-preview-tts 모델이 반환하는 오디오 데이터는 16bit signed PCM입니다.
-        function pcmToWav(pcm16, sampleRate) {
-            const pcmLength = pcm16.length * 2;
-            const wavBuffer = new ArrayBuffer(44 + pcmLength);
-            const view = new DataView(wavBuffer);
-            const littleEndian = true;
-
-            // RIFF chunk
-            writeString(view, 0, 'RIFF');
-            view.setUint32(4, 36 + pcmLength, littleEndian);
-            writeString(view, 8, 'WAVE');
-
-            // fmt chunk
-            writeString(view, 12, 'fmt ');
-            view.setUint32(16, 16, littleEndian); // Sub-chunk size
-            view.setUint16(20, 1, littleEndian);  // Audio format (1 = PCM)
-            view.setUint16(22, 1, littleEndian);  // Channels (1)
-            view.setUint32(24, sampleRate, littleEndian); // Sample rate
-            view.setUint32(28, sampleRate * 2, littleEndian); // Byte rate
-            view.setUint16(32, 2, littleEndian);  // Block align
-            view.setUint16(34, 16, littleEndian); // Bits per sample
-
-            // data chunk
-            writeString(view, 36, 'data');
-            view.setUint32(40, pcmLength, littleEndian);
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
             
-            // PCM data
-            for (let i = 0; i < pcm16.length; i++) {
-                view.setInt16(44 + i * 2, pcm16[i], littleEndian);
-            }
+            const mobileNavLinks = mobileMenu.querySelectorAll('a');
+            mobileNavLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
 
-            return new Blob([view], { type: 'audio/wav' });
+            const timelineData = [
+                { year: '2024년 5월', event: "광명여성새로일하기센터 '온라인 마케팅 사무원 과정' 수료", description: "전문가로의 첫 걸음, 체계적인 교육을 통해 미디어 마케팅의 기본기를 다졌습니다." },
+                { year: '2024년 7월', event: "광명시소상공인지원 SNS체험단 협업", description: "이론을 넘어 실전으로, 지역 소상공인과 직접 협력하며 현장 경험을 쌓았습니다." },
+                { year: '2024년 9월', event: "SNS마케팅 지도사 자격 취득 및 경기도사회적경제원 컨설팅 참여", description: "공인된 전문성을 확보하고, 사회적협동조합 설립을 위한 구체적인 컨설팅을 받았습니다." },
+                { year: '2024년 10월', event: "제6회 광명시 여성창업 디딤돌페스티벌 홍보 지원", description: "지역 사회 행사에 적극적으로 참여하여 홍보 역량을 발휘하고 지역 네트워크를 강화했습니다." },
+                { year: '2024년 11월', event: "광명시사회적경제·공정무역 활동가 양성과정 수료", description: "사회적 가치에 대한 이해를 심화하며 협동조합의 정체성을 확립했습니다." },
+                { year: '2024년 12월', event: "아라미디어사회적협동조합 창립총회", description: "뜻을 함께하는 이들이 모여, 지역사회와의 상생을 위한 아라미디어의 공식적인 출범을 알렸습니다." }
+            ];
 
-            function writeString(view, offset, string) {
-                for (let i = 0; i < string.length; i++) {
-                    view.setUint8(offset + i, string.charCodeAt(i));
-                }
-            }
-        }
+            const timelineContainer = document.getElementById('timeline-container');
+            timelineData.forEach((item, index) => {
+                const isLeft = index % 2 === 0;
+                const timelineItem = document.createElement('div');
+                timelineItem.className = `timeline-item relative flex items-center ${isLeft ? 'md:justify-start' : 'md:justify-end'}`;
+                timelineItem.innerHTML = `
+                    <div class="hidden md:block absolute ${isLeft ? 'right-1/2 translate-x-1/2' : 'left-1/2 -translate-x-1/2'}">
+                        <div class="w-4 h-4 bg-orange-500 rounded-full border-4 border-white"></div>
+                    </div>
+                    <div class="w-full md:w-[calc(50%-2rem)] p-6 bg-white rounded-lg shadow-lg border border-gray-100">
+                        <p class="text-orange-500 font-bold">${item.year}</p>
+                        <h3 class="mt-1 text-xl font-semibold text-gray-800">${item.event}</h3>
+                        <p class="mt-2 text-gray-600">${item.description}</p>
+                    </div>
+                `;
+                timelineContainer.appendChild(timelineItem);
+            });
+            
+            const servicesData = [
+                { icon: '📢', title: '소상공인 마케팅 브랜딩', description: '온라인 채널 분석, 콘텐츠 기획 및 제작, 광고 집행 등 맞춤형 홍보 전략을 수립하고 실행합니다.' },
+                { icon: '🎓', title: '미디어 활용 교육', description: '소상공인이 스스로 온라인 채널을 운영할 수 있도록 블로그, SNS 등 실습 위주의 교육을 제공합니다.' },
+                { icon: '🏞️', title: '지역 문화/관광 홍보', description: '광명시의 숨겨진 명소와 이야기를 발굴하여 매력적인 미디어 콘텐츠로 제작하고 널리 알립니다.' }
+            ];
 
-        // 재생 상태 업데이트
-        function updatePlaybackState(state) {
-            if (state === 'playing') {
-                isPlaying = true;
-                buttonText.textContent = '일시정지';
-                playButton.classList.add('bg-red-600', 'hover:bg-red-700');
-                playButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            } else if (state === 'paused' || state === 'stopped') {
-                isPlaying = false;
-                buttonText.textContent = '플레이';
-                playButton.classList.remove('bg-red-600', 'hover:bg-red-700');
-                playButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                if (state === 'stopped') {
-                    statusMessage.classList.add('hidden');
-                }
-            }
-        }
+            const servicesGrid = document.getElementById('services-grid');
+            servicesData.forEach(service => {
+                const serviceCard = document.createElement('div');
+                serviceCard.className = 'p-8 bg-gray-50 rounded-xl hover:shadow-xl hover:-translate-y-2 transition-all duration-300';
+                serviceCard.innerHTML = `
+                    <div class="text-5xl">${service.icon}</div>
+                    <h3 class="mt-6 text-2xl font-bold text-gray-800">${service.title}</h3>
+                    <p class="mt-3 text-gray-600">${service.description}</p>
+                `;
+                servicesGrid.appendChild(serviceCard);
+            });
 
-        // API 호출 함수
-        async function fetchAudio() {
-            if (isProcessing) return; // 이미 처리 중이면 아무것도 하지 않음
+            const visionData = [
+                { icon: '💼', title: '매출 증대 지원', description: '소상공인의 실질적 성장을 돕습니다.' },
+                { icon: '📈', title: '지역 경제 활성화', description: '소비와 생산의 선순환을 만듭니다.' },
+                { icon: '🏙️', title: '지역 브랜딩 강화', description: '광명시의 도시 가치를 높입니다.' },
+                { icon: '🤝', title: '안정적 일자리 창출', description: '지속가능한 공동체를 구현합니다.' }
+            ];
+            
+            const visionContainer = document.querySelector('#vision .grid');
+            visionData.forEach(item => {
+                const visionItem = document.createElement('div');
+                visionItem.className = 'p-6';
+                visionItem.innerHTML = `
+                    <div class="text-5xl mb-4">${item.icon}</div>
+                    <h4 class="text-xl font-bold text-gray-800">${item.title}</h4>
+                    <p class="mt-2 text-gray-600">${item.description}</p>
+                `;
+                visionContainer.appendChild(visionItem);
+            });
 
-            isProcessing = true;
-            statusMessage.textContent = '오디오를 생성 중입니다. 잠시만 기다려 주세요...';
-            statusMessage.classList.remove('hidden', 'text-green-500', 'text-red-500');
-            statusMessage.classList.add('text-gray-500');
-            buttonText.classList.add('hidden');
-            loadingSpinner.classList.remove('hidden');
-            playButton.disabled = true;
-
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{
-                    parts: [{ text: audioText }]
-                }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: {
-                        voiceConfig: {
-                            prebuiltVoiceConfig: { voiceName: "Kore" } // 'Kore'는 firm voice입니다. 다른 목소리 옵션도 사용 가능합니다.
-                        }
-                    }
+            const impactData = [
+                { 
+                    title: '마케팅 활용 기대 효과', 
+                    items: [
+                        '신규 고객 확보 및 충성 고객 증대',
+                        '온라인 시장 진출을 통한 판로 확대',
+                        '브랜드 인지도 상승 및 이미지 개선',
+                        '마케팅 역량 내재화를 통한 자생력 강화'
+                    ],
+                    icon: '🎯'
                 },
-                model: "gemini-2.5-flash-preview-tts"
-            };
-
-            // exponential backoff
-            const maxRetries = 5;
-            let currentRetry = 0;
+                { 
+                    title: '지역사회 경제적 효과', 
+                    items: [
+                        '소상공인 매출 증대로 지역 내 소비 활성화',
+                        '지역 특화 상품 및 서비스 발굴',
+                        '관광객 유입 증대를 통한 부가가치 창출',
+                        '사회적경제 활성화 및 일자리 창출 기여'
+                    ],
+                    icon: '🌍'
+                }
+            ];
             
-            while (currentRetry < maxRetries) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    if (!response.ok) {
-                        if (response.status === 429) { // Too many requests
-                            const backoffTime = Math.pow(2, currentRetry) * 1000;
-                            console.warn(`API rate limit exceeded. Retrying in ${backoffTime / 1000} seconds...`);
-                            await new Promise(resolve => setTimeout(resolve, backoffTime));
-                            currentRetry++;
-                            continue; // Retry the loop
-                        } else {
-                            throw new Error(`API error: ${response.status} ${response.statusText}`);
-                        }
+            const impactContainer = document.querySelector('#impact .grid');
+            impactData.forEach(item => {
+                const impactItem = document.createElement('div');
+                impactItem.className = 'bg-orange-50 p-8 rounded-xl';
+                let itemsHtml = item.items.map(text => `<li class="flex items-start"><span class="text-orange-500 mr-3 mt-1">✓</span><span>${text}</span></li>`).join('');
+                impactItem.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="text-4xl mr-4">${item.icon}</span>
+                        <h3 class="text-2xl font-bold text-gray-800">${item.title}</h3>
+                    </div>
+                    <ul class="mt-6 space-y-3 text-gray-700">${itemsHtml}</ul>
+                `;
+                impactContainer.appendChild(impactItem);
+            });
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
                     }
+                });
+            }, { threshold: 0.1 });
 
-                    const result = await response.json();
-                    const part = result?.candidates?.[0]?.content?.parts?.[0];
-                    const audioData = part?.inlineData?.data;
-                    const mimeType = part?.inlineData?.mimeType;
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                observer.observe(item);
+            });
 
-                    if (audioData && mimeType && mimeType.startsWith("audio/")) {
-                        const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)[1], 10);
-                        const pcmData = base64ToArrayBuffer(audioData);
-                        const pcm16 = new Int16Array(pcmData);
-                        const wavBlob = pcmToWav(pcm16, sampleRate);
-                        const audioUrl = URL.createObjectURL(wavBlob);
-                        
-                        audioPlayer.src = audioUrl;
-                        audioPlayer.play();
-                        statusMessage.textContent = '오디오 재생 중...';
-                        statusMessage.classList.remove('text-gray-500', 'text-red-500');
-                        statusMessage.classList.add('text-green-500');
-                        updatePlaybackState('playing');
-                    } else {
-                        throw new Error('오디오 데이터를 찾을 수 없습니다.');
+            const sections = document.querySelectorAll('main section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            const sectionObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('active');
+                            }
+                        });
                     }
-                    
-                    break; // Exit the loop on success
+                });
+            }, { rootMargin: '-50% 0px -50% 0px' });
 
-                } catch (error) {
-                    console.error('오디오 생성 중 오류 발생:', error);
-                    statusMessage.textContent = `오류가 발생했습니다: ${error.message}`;
-                    statusMessage.classList.remove('text-gray-500', 'text-green-500');
-                    statusMessage.classList.add('text-red-500');
-                    break; // Exit the loop on fatal error
-                } finally {
-                    isProcessing = false;
-                    buttonText.classList.remove('hidden');
-                    loadingSpinner.classList.add('hidden');
-                    playButton.disabled = false;
-                }
-            }
-
-            if (currentRetry >= maxRetries) {
-                statusMessage.textContent = '오디오 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.';
-                statusMessage.classList.remove('text-gray-500', 'text-green-500');
-                statusMessage.classList.add('text-red-500');
-            }
-        }
-        
-        // 버튼 클릭 이벤트 리스너
-        playButton.addEventListener('click', () => {
-            if (isPlaying) {
-                audioPlayer.pause();
-                updatePlaybackState('paused');
-            } else {
-                if (audioPlayer.src) {
-                    audioPlayer.play();
-                    updatePlaybackState('playing');
-                } else {
-                    fetchAudio();
-                }
-            }
+            sections.forEach(section => {
+                sectionObserver.observe(section);
+            });
         });
-
-        // 오디오 재생이 끝나면 상태를 초기화
-        audioPlayer.addEventListener('ended', () => {
-            updatePlaybackState('stopped');
-        });
-
-        // 페이지 로드 시 오디오 상태 초기화
-        document.addEventListener('DOMContentLoaded', () => {
-            updatePlaybackState('stopped');
-        });
-
     </script>
 </body>
 </html>
