@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <!-- Chosen Palette: Warm Community (따스한 공동체) -->
     <!-- Application Structure Plan: 본 SPA는 사용자가 아라미디어의 스토리를 자연스럽게 따라갈 수 있도록 설계된 수직적 네러티브 구조를 채택했습니다. 정적인 보고서 형식을 탈피하여 '소개 → 우리의 이야기(연혁) → 핵심 사업 → 비전과 목표 → 기대 효과 → 기업 정보' 순으로 콘텐츠를 재배치했습니다. 이 구조는 사용자가 회사의 정체성을 먼저 인지하고, 그들의 과거(설립 과정)를 통해 신뢰를 쌓은 뒤, 현재의 사업과 미래의 비전을 순차적으로 이해하도록 유도합니다. 각 섹션은 명확한 헤딩과 소개글로 컨텍스트를 제공하며, 상단 고정 내비게이션을 통해 사용자가 원하는 정보에 즉시 접근할 수 있도록 하여 탐색의 자유도를 보장합니다. 이 방식은 정보의 위계를 명확히 하고 사용자 경험을 극대화하기 위해 선택되었습니다. -->
-    <!-- Visualization & Content Choices: 보고서의 핵심 콘텐츠인 '연혁'은 사용자의 시선 흐름에 따라 이벤트가 동적으로 나타나는 인터랙티브 타임라인으로 시각화했습니다. (Goal: Change -> Presentation: Interactive Timeline -> Interaction: Scroll-based animation). 이는 정적인 텍스트 목록보다 훨씬 높은 몰입감과 정보 전달력을 제공하며, 회사의 성장 서사를 효과적으로 전달합니다. '핵심 사업'과 '목표'는 아이콘을 활용한 카드 그리드 레이아웃으로 표현하여 복잡한 정보를 시각적으로 명료하게 정리했습니다. (Goal: Organize -> Presentation: Card Grid -> Interaction: Hover effects). 보고서에 정량적 데이터가 없어 Chart.js와 같은 라이브러리는 불필하다고 판단, 사용하지 않았습니다. 모든 그래픽 요소는 HTML/CSS와 유니코드 문자로 구현했습니다. -->
+    <!-- Visualization & Content Choices: 보고서의 핵심 콘텐츠인 '연혁'은 사용자의 시선 흐름에 따라 이벤트가 동적으로 나타나는 인터랙티브 타임라인으로 시각화했습니다. (Goal: Change -> Presentation: Interactive Timeline -> Interaction: Scroll-based animation). 이는 정적인 텍스트 목록보다 훨씬 높은 몰입감과 정보 전달력을 제공하며, 회사의 성장 서사를 효과적으로 전달합니다. '핵심 사업'과 '목표'는 아이콘을 활용한 카드 그리드 레이아웃으로 표현하여 복잡한 정보를 시각적으로 명료하게 정리했습니다. (Goal: Organize -> Presentation: Card Grid -> Interaction: Hover effects). 보고서에 정량적 데이터가 없어 Chart.js와 같은 라이브러리는 불필요하다고 판단, 사용하지 않았습니다. 모든 그래픽 요소는 HTML/CSS와 유니코드 문자로 구현했습니다. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
@@ -95,6 +95,8 @@
                 </p>
                 <div class="mt-10">
                     <a href="#services" class="bg-orange-500 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-orange-600 transition-transform hover:scale-105 transform">우리의 서비스 보기</a>
+                    <!-- 아라미디어 로고 이미지 추가. 사용자께서 업로드하신 파일의 ID를 사용합니다. -->
+                    <img src="uploaded:아라미디어로고 큰것 바탕칼라-원형png.jpg-22a48483-9ca0-4ff2-b97d-a8726d4253e6" alt="아라미디어 로고" class="mx-auto mt-8 rounded-full shadow-lg max-w-[150px] transition-transform duration-300 hover:scale-110">
                 </div>
             </div>
         </section>
